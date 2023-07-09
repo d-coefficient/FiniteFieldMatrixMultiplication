@@ -15,14 +15,61 @@ namespace FiniteFieldMatrixMultiplication
             const byte n = 2;
             var ffield = FiniteField(p, n);
             SquareMatrix.ConfigureAlgebra(2, (int)Pow(p, n), ffield.sum, ffield.product);
-            var list = new int[] { 20, 66, 129, 69, 73, 77, 81, 97, 113 };
-            var matrices = list.Select((x) => new SquareMatrix(x)).ToArray();
-            for (int i = 0; i < list.Length; i++)
+            var list = new List<long> { /*20, 66, 129, */69, 73, 77, 81, 97, 113 };
+            var generators = list.Select((x) => new SquareMatrix(x)).ToArray();
+            var current = list.Count;
+            int previous = 0;
+            for (int i = 0; i < list.Count; i++)
             {
-                for (int j = 0; j < list.Length; j++)
+                for (int j = 0; j < generators.Length; j++)
                 {
-                    Display(SquareMatrix.Product(matrices[i], matrices[j]));
+                    var matrixcode = SquareMatrix.Product(new SquareMatrix(list[i]), generators[j]).Encode();
+                    if (!list.Contains(matrixcode))
+                    {
+                        list.Add(matrixcode);
+                    }
+                    var iterations = i * generators.Length + j;
+                    var message = $"Iterations: {iterations}\nLoading";
+                    for (int k = 0; k < iterations % 4; k++)
+                    {
+                        message += ".";
+                    }
+                    Console.Clear();
+                    Console.WriteLine(message);
                 }
+                if (i == previous)
+                {
+                    if (current == list.Count)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        previous = current;
+                        current = list.Count;
+                    }
+                }
+            }
+            Console.WriteLine("group order: " + list.Count);
+            var identity = new SquareMatrix(true);
+            var identitycode = identity.Encode();
+            Func<SquareMatrix, int> matrixorder = (SquareMatrix m) =>
+            {
+                var power = identity;
+                int i = 0;
+                do
+                {
+                    power = SquareMatrix.Product(power, m);
+                    i++;
+                } while (power.Encode() != identitycode);
+                return i;
+            };
+            for (int i = 0; i < list.Count; i++)
+            {
+                var matrix = new SquareMatrix(list[i]);
+                Console.WriteLine("matrix code: " + list[i]);
+                Console.WriteLine("matrix order: " + matrixorder(matrix));
+                Display(matrix);
             }
             Console.ReadKey(true);
         }
